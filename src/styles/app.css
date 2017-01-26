@@ -1,0 +1,274 @@
+
+@font-face {
+  font-family: arciform; /* Имя шрифта */
+  src: url(fonts/arciform.otf); /* Путь к файлу со шрифтом */
+  font-weight: normal;
+  font-style: normal;
+}
+
+body{
+  margin:0;
+  font-family: arciform;
+}
+div#root{
+  position: relative;
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+}
+.game-row{
+  height: 4em;
+  /*TODO --> This box-shadow may be better than he will be added to button.square*/
+  /*box-shadow: 0 0 0.4em rgba(0, 0, 0, 0.26);*/
+}
+button.square{
+  width: 5em;
+  height: 5em;
+  margin: 0;
+  padding: 0px 6px;
+  position: relative;
+  margin-right: -.1em;
+  border-collapse: collapse;
+  display: inline-flex;
+  border: 1px solid;
+  color: #797979;
+
+  box-shadow: 0 0 0.4em rgba(0, 0, 0, 0.26);
+  outline: none;
+}
+button.square:not([disabled]):hover{
+  background: ghostwhite;
+}
+
+.game-container{
+  margin: auto;
+  text-align: center;
+}
+.game-logo{
+  font-size:1.4em;
+  font-weight: bold;
+  padding: 1em;
+}
+.game-loading{
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  font-size: 3rem;
+  z-index: 9999;
+  background: white;
+  padding: 4em 0;
+  bottom: 0;
+  opacity:0;
+  transform:translateY(-50em);
+  transition: bottom 1s ease,padding 1s ease, opacity 0.3s ease,transform 2s ease;
+}
+
+.game-field.loading > .game-loading{
+  opacity:1;
+  transform:scale(1,1);
+}
+
+
+@media screen and (min-height:1024px),screen and (min-width: 768px){
+
+  .game-logo{
+    font-size: 1.8em;
+    font-weight: bold;
+    padding: .5em;
+  }
+  button.square {
+    width: 9vmax;
+    height: 9vmax;
+  }
+  .game-row {
+    height: 8.9vmax;
+  }
+
+}
+.game-logo:before{
+  content: 'TIC TAC TOE GAME';
+}
+span.value{
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  font-size: 8vmax;
+  height: 100%;
+  color: #bfbfbf;
+}
+button.square.O,button.square.O > span{
+  background: #ffe254;
+  color: rgb(111, 97, 26);
+}
+button.square.O > span:before{
+  content:'O';
+}
+button.square.X,button.square.X > span{
+  background: #54efff;
+  color: rgb(24, 114, 123);
+}
+button.square.X > span:before{
+  content:'X';
+}
+
+@keyframes winnerSquare {
+  0% {
+    background: #34ff2c;
+    color: #04a000 !important;
+  }
+}
+button.square.winner > .value {
+  animation: winnerSquare 1s infinite linear;
+}
+
+@media screen and (max-height: 480px),screen and (max-width: 360px){
+  .game-logo{
+    padding: .75em;
+  }
+  .game-logo:before{
+    content: 'TIC TAC TOE';
+  }
+
+  span.value {
+    font-size: 4em;
+  }
+}
+@media screen and (max-height: 270px){
+  .game-logo{
+    font-size:1.2em;
+    font-weight: bold;
+    padding: .5em;
+  }
+}
+.player-info{
+  /*position: absolute;*/
+  /*left: 0;*/
+  /*right: 0;*/
+  /*top: 0;*/
+  /*bottom: 0;*/
+  /*z-index: 9999;*/
+  /*transition: top .3s ease;*/
+}
+.player-info.reduced > .start-game-container {
+  transform: translateY(-50em);
+  /*opacity: 0;*/
+  /*top:auto;*/
+  z-index: 1;
+}
+
+.start-game-container{
+  right: 0;
+  left: 0;
+  bottom: 0;
+  top: 0;
+  background: whitesmoke;
+  position: absolute;
+  z-index: 9999;
+  transition: transform .3s ease;
+}
+.player-info:not(.reduced) > .player-statistic{
+  display: none;
+}
+.player-info.reduced > .start-game-container{
+  transform: translateY(-50em);
+  height: 0;
+  opacity: 0;
+}
+.start-game-container_text{
+  font-size: 4vmax;
+  position: relative;
+  display: flex;
+  min-height: 15vmax;
+}
+.start-game-container_text > label{
+  vertical-align: middle;
+  position: relative;
+  margin: auto auto 3vh auto;
+}
+.start-game-container_wrapper{
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  vertical-align: bottom;
+  margin: auto;
+  /* flex-direction: column; */
+  /* height: 100%; */
+}
+.start-game-container_wrapper > button{
+  flex: 0 0 19%;
+  /* margin: auto 0; */
+  font-size: 16vmax;
+  outline: none;
+  /* height: 35vh; */
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: #737373;
+  transition: all .15s ease;
+  border-radius: 50%;
+}
+.start-game-container_wrapper > button.O:hover{
+  background: #ffe254;
+  color: rgb(111, 97, 26);
+  box-shadow: 0 0 0.1em rgba(0, 0, 0, 0.14);
+}
+.start-game-container_wrapper > button.X:hover{
+  background: #54efff;
+  color: rgb(24, 114, 123);
+  box-shadow: 0 0 0.1em rgba(0, 0, 0, 0.14);
+}
+.start-game-container_wrapper > button.O:active{
+  background: #ffdd34;
+  color: rgb(99, 83, 3);
+}
+.start-game-container_wrapper > button.X:active{
+  background: #0be8ff;
+  color: rgb(2, 96, 105);
+}
+.player-statistic{
+  /* min-height: 15vh; */
+  /*-webkit-box-orient: vertical;*/
+  /*-webkit-box-direction: normal;*/
+  /*-ms-flex-direction: column;*/
+  /*flex-direction: column;*/
+  /*-webkit-box-pack: center;*/
+  /*-ms-flex-pack: center;*/
+  /*justify-content: center;*/
+  padding: 1em 0 0 0;
+}
+.player-statistic_wrapper{
+  height: 2.5vmax;
+  text-align: center;
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  vertical-align: middle;
+  justify-content: space-between;
+  background: transparent;
+  border: none;
+  margin: 0 auto;
+}
+.player-statistic_wrapper >*{
+  padding: .39442em 0;
+  font-size: 1.2vmax;
+  flex: 1 1 33%;
+}
+.new-game-button{
+  background: transparent;
+  border-radius: 4em;
+  color: #00264e;
+  outline: none;
+  border: 1px solid #00264e;
+}
+.new-game-button:hover{
+  background: #00264e;
+  color: white;
+}
+.player-statistic_wrapper > label.autoplay-checkbox{
+  margin-left: auto;
+  margin-right: auto;
+  flex: 0 0 auto;
+}
