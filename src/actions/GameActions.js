@@ -192,18 +192,18 @@ function AITurn() {
 
 
 }
-
-let winnerKeys = {
-    '0':'enemy',
-    '1':'player',
-    '-1':'draw',
-    null:'continue'
-};
+//
+// let winnerKeys = {
+//     '0':'enemy',
+//     '1':'player',
+//     '-1':'draw',
+//     null:'continue'
+// };
 function getWinner(board) {
 
     // Check if someone won
     let vals = [settings.players.enemy, settings.players.player];
-    let allNotNull = true;
+    let allNotEmpty = true;
     // vals.map((value)=>{
     //
     // });
@@ -229,8 +229,8 @@ function getWinner(board) {
                 if (board[j][i] != value) {
                     colComplete = false;
                 }
-                if (board[i][j] == null) {
-                    allNotNull = false;
+                if (board[i][j] == 0) {
+                    allNotEmpty = false;
                 }
             }
             if (rowComplete || colComplete) {
@@ -242,7 +242,7 @@ function getWinner(board) {
         }
     }
     //tie!
-    if (allNotNull) {
+    if (allNotEmpty) {
         return -1;
     }
     //winner not found
@@ -250,7 +250,7 @@ function getWinner(board) {
 }
 
 
-function recurseMinimax(board, enemy, player) {
+function recurseMinimax(board, enemy) {
     numNodes++;
     var winner = getWinner(board);
     if (winner != null) {
@@ -273,14 +273,15 @@ function recurseMinimax(board, enemy, player) {
 
         for (var i = 0; i < 3; i++) {
             for (var j = 0; j < 3; j++) {
-                if (board[i][j] == null) {
+                if (board[i][j] == 0) {
                     board[i][j] = enemy;
-                    var value = recurseMinimax(board, enemy, player)[0];
+                    let player = (enemy == -1 ? 1 : enemy == 1 ? -1 : 0);
+                    var value = recurseMinimax(board, player)[0];
                     if ((enemy && (nextVal == null || value > nextVal)) || (player && (nextVal == null || value < nextVal))) {
                         nextBoard = board.map(arr => arr.slice());
                         nextVal = value;
                     }
-                    board[i][j] = null;
+                    board[i][j] = 0;
                 }
             }
         }
@@ -291,7 +292,7 @@ function recurseMinimax(board, enemy, player) {
 
 function AITurn2(gameField){
     numNodes = 0;
-    return recurseMinimax(gameField, settings.players.enemy, settings.players.player)[1];
+    return recurseMinimax(gameField, settings.players.enemy)[1];
 }
 
 
@@ -362,8 +363,8 @@ export function makeGameTurn(row, cell, value) {
             var victory = checkWin(gameField); // проверка на победу.
             if (!victory) {
                 gameField[row][cell] = value;
-                AITurn();
-                victory = checkWin(gameField); // проверка на победу
+                gameField = AITurn2(gameField);
+                // victory = checkWin(gameField); // проверка на победу
                 dispatch({
                     type: UPDATE_GAME_DATA,
                     payload: gameField
