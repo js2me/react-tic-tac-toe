@@ -10,7 +10,7 @@ export default class Game extends Component {
     inputToSquare(row, cell, value) {
         let {gameActions, player} = this.props;
         if (value === 0) {
-            gameActions.makeGameTurn(row, cell, player);
+            gameActions.makePlayerTurn(row, cell, player);
         }
     }
 
