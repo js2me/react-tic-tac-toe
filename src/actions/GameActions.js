@@ -424,7 +424,7 @@ function findLineCoefficient(squares) {
         }
 
     }
-    return (huy > 0 ? 0 : [1, 2, 9][own]) + (own > 0 ? 0 : [1, 2, 30][huy]);
+    return (huy < 0 ? 0 : [1, 2, 10][own]) + (own < 0 ? 0 : [1, 2, 9][huy]);
 }
 function findCoefficient(i, j, array) {
     //[0,3,6]
