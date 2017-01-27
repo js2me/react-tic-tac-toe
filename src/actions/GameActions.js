@@ -405,7 +405,7 @@ function minimaxTurn2(gField) {
     // gameField[betterTurn[0]][betterTurn[1]] = settings.players.enemy;
 }
 
-function findLineCoefficient(...squares) {
+function findLineCoefficient(squares) {
     let {enemy, player} = settings.players;
     let none = 0;
     let own = 0;
@@ -424,7 +424,7 @@ function findLineCoefficient(...squares) {
         }
 
     }
-    return huy > 0 ? 0 : [1, 2, 9][own] + own > 0 ? 0 : [1, 2, 11][huy];
+    return (huy > 0 ? 0 : [1, 2, 9][own]) + (own > 0 ? 0 : [1, 2, 30][huy]);
 }
 function findCoefficient(i, j, array) {
     //[0,3,6]
@@ -433,8 +433,9 @@ function findCoefficient(i, j, array) {
     for (let dots in points[i * 3 + j]) {
         // for (let str in dots) {
         let line = lines[dots];
-        coefficient += findLineCoefficient(array[line[0][0]][line[0][1]], array[line[1][0]][line[1][1]], array[line[2][0]][line[2][1]]);
+        coefficient += findLineCoefficient([array[line[0][1]][line[0][0]], array[line[1][1]][line[1][0]], array[line[2][1]][line[2][0]]]);
     }
+    console.log(i,j,coefficient);
     return [i, j, coefficient];
     // console.log(data);
 

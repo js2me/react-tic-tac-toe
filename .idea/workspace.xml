@@ -27,8 +27,8 @@
       <file leaf-file-name="GameActions.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/actions/GameActions.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="205">
-              <caret line="468" column="48" selection-start-line="0" selection-start-column="0" selection-end-line="498" selection-end-column="1" />
+            <state relative-caret-position="251">
+              <caret line="435" column="60" selection-start-line="435" selection-start-column="60" selection-end-line="435" selection-end-column="60" />
               <folding>
                 <element signature="e#0#178#0" expanded="true" />
                 <element signature="n#!!block;n#loadGameFieldData#0" expanded="false" />
@@ -271,12 +271,12 @@
       <workItem from="1485422866754" duration="13073000" />
       <workItem from="1485463127455" duration="10600000" />
       <workItem from="1485502235233" duration="18486000" />
-      <workItem from="1485529924174" duration="7482000" />
+      <workItem from="1485529924174" duration="9561000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="163603000" />
+    <option name="totallyTimeSpent" value="165682000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1456" height="876" extended-state="6" />
@@ -660,8 +660,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/actions/GameActions.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="205">
-          <caret line="468" column="48" selection-start-line="0" selection-start-column="0" selection-end-line="498" selection-end-column="1" />
+        <state relative-caret-position="251">
+          <caret line="435" column="60" selection-start-line="435" selection-start-column="60" selection-end-line="435" selection-end-column="60" />
           <folding>
             <element signature="e#0#178#0" expanded="true" />
             <element signature="n#!!block;n#loadGameFieldData#0" expanded="false" />
