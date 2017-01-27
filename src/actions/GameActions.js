@@ -32,6 +32,27 @@ let recurseWinner = {
     '-1': board=>[0, board]
 };
 let playersValues = [-1, 1];
+let lines = [
+    [[0, 0], [0, 1], [0, 2]],// 0
+    [[1, 0], [1, 1], [1, 2]],// 1
+    [[2, 0], [2, 1], [2, 2]],// 2
+    [[0, 0], [1, 0], [2, 0]],// 3
+    [[0, 1], [1, 1], [2, 1]],// 4
+    [[0, 2], [1, 2], [2, 2]],// 5
+    [[0, 0], [1, 1], [2, 2]],// 6
+    [[0, 2], [1, 1], [2, 0]] // 7
+];
+let points = [
+    [0, 3, 6],
+    [0, 4],
+    [0, 5, 7],
+    [1, 3],
+    [1, 4, 6, 7],
+    [1, 5],
+    [2, 3, 7],
+    [2, 4],
+    [2, 5, 6]
+];
 function loadGameFieldData(dispatch) {
     fetch(API_ROOT_URL)
         .then(
@@ -199,9 +220,9 @@ export function resetGameStatus() {
 }
 function findCoefficientSquare(value) {
     // debugger;
-    if(typeof value == 'number')
-        return 0;
-    else{
+    if (typeof value == 'number')
+        return value;
+    else {
         var players = value.match(/p/g);
         var enemy = value.match(/e/g);
         return (players === null ? 0 : players.length) + (enemy === null ? 0 : enemy.length);
@@ -241,21 +262,21 @@ function angleCoefficient(i, j, array) {
         // if ((array[i][j + 1] == settings.players.enemy && array[i][j + 2] == settings.players.enemy) || array[i][j + 1] == settings.players.player && array[i][j + 2] == settings.players.player) {
         //     value+=10;
         // }
-        let leftTop = array[i][j + 1] + array[i][j + 2] + array[i + 1][j + 1] + array[i + 2][j + 2] + array[i + 1][j] + array[i + 2][j];
+        let leftTop = checkLine(array[i][j + 1] + array[i][j + 2]) + checkLine(array[i + 1][j + 1] + array[i + 2][j + 2]) + checkLine(array[i + 1][j] + array[i + 2][j]);
         return findCoefficientSquare(leftTop);
     }
     //  [i][j-2]   [i][j-1]   [i][j]
     // [i+1][j-2] [i+1][j-1] [i+1][j]
     // [i+2][j-2] [i+2][j-1] [i+2][j]
     if (i == 0 && j == 2) {
-        let rightTop = array[i][j - 1] + array[i][j - 2] + array[i + 1][j] + array[i + 2][j] + array[i + 1][j - 1] + array[i + 2][j - 2];
+        let rightTop = checkLine(array[i][j - 1] + array[i][j - 2]) + checkLine(array[i + 1][j] + array[i + 2][j]) + checkLine(array[i + 1][j - 1] + array[i + 2][j - 2]);
         return findCoefficientSquare(rightTop);
     }
     // [i-2][j-2] [i-2][j-1] [i-2][j]
     // [i-1][j-2] [i-1][j-1] [i-1][j]
     //  [i][j-2]   [i][j-1]   [i][j]
     if (i == 2 && j == 2) {
-        let rightBot = array[i][j - 1] + array[i][j - 2] + array[i - 1][j - 1] + array[i - 2][j - 2] + array[i - 1][j] + array[i - 2][j];
+        let rightBot = checkLine(array[i][j - 1] + array[i][j - 2]) + checkLine(array[i - 1][j - 1] + array[i - 2][j - 2]) + checkLine(array[i - 1][j] + array[i - 2][j]);
         return findCoefficientSquare(rightBot);
     }
     // [i-2][j] [i-2][j+1] [i-2][j+2]
@@ -268,12 +289,23 @@ function angleCoefficient(i, j, array) {
     // return 0;
 }
 function centerCoefficient(i, j, array) {
-    // let reverseDiagonal = array[i - 1][j + 1] + array[i + 1][j - 1];
-    // let diagonal = array[i - 1][j + 1] + array[i + 1][j - 1];
-    // let column = ;
-    // let row = ;
-    return findCoefficientSquare(array[i - 1][j + 1] + array[i + 1][j - 1] + array[i - 1][j + 1] + array[i + 1][j - 1] + array[i - 1][j] + array[i + 1][j] + array[i][j - 1] + array[i][j + 1], true);
+    let reverseDiagonal = checkLine(array[i - 1][j + 1] + array[i + 1][j - 1]);
+    let diagonal = checkLine(array[i - 1][j + 1] + array[i + 1][j - 1]);
+    let column = checkLine(array[i - 1][j] + array[i + 1][j]);
+    let row = checkLine(array[i][j - 1] + array[i][j + 1]);
+    return findCoefficientSquare(reverseDiagonal + diagonal + column + row, true);
 }
+function checkLine(value) {
+    if (typeof value == 'string') {
+        if (value.indexOf('0') == -1) {
+            if (value.indexOf('p') != -1) {
+                return 'ppppp';
+            } else {
+                return 'eeeeeeeeeee';
+            }
+        }
+    }
+};
 function centerAngularCoefficient(i, j, array) {
 
     //                                  _ 0 _
@@ -283,28 +315,28 @@ function centerAngularCoefficient(i, j, array) {
     // [i+1][j-1] [i+1][j] [i+1][j+1]
     // [i+2][j-1] [i+2][j] [i+2][j+1]
     if (i == 0 && j == 1) {
-        let middleTop = array[i + 1][j] + array[i + 2][j] + array[i][j - 1] + array[i][j + 1];
+        let middleTop = checkLine(array[i + 1][j] + array[i + 2][j]) + checkLine(array[i][j - 1] + array[i][j + 1]);
         return findCoefficientSquare(middleTop);
     }
     //  [i-1][j-2] [i-1][j-1] [i-1][j]
     //   [i][j-2]   [i][j-1]   [i][j]
     //  [i+1][j-2] [i+1][j-1] [i+1][j]
     if (i == 1 && j == 2) {
-        let rightMiddle = array[i][j - 2] + array[i][j - 1] + array[i - 1][j] + array[i + 1][j];
+        let rightMiddle = checkLine(array[i][j - 2] + array[i][j - 1]) + checkLine(array[i - 1][j] + array[i + 1][j]);
         return findCoefficientSquare(rightMiddle);
     }
     // [i-2][j-1] [i-2][j] [i-2][j+1]
     // [i-1][j-1] [i-1][j] [i-1][j+1]
     //  [i][j-1]   [i][j]   [i][j+1]
     if (i == 2 && j == 1) {
-        let botMiddle = array[i - 1][j] + array[i - 2][j] + array[i][j - 1] + array[i][j + 1];
+        let botMiddle = checkLine(array[i - 1][j] + array[i - 2][j]) + checkLine(array[i][j - 1] + array[i][j + 1]);
         return findCoefficientSquare(botMiddle);
     }
     //  [i-1][j] [i-1][j+1] [i-1][j+2]
     //   [i][j]   [i][j+1]   [i][j+2]
     //  [i+1][j] [i+1][j+1] [i+1][j+2]
     if (i == 1 && j == 0) {
-        let leftMiddle = array[i][j + 1] + array[i][j + 2]+ array[i - 1][j] + array[i + 1][j];
+        let leftMiddle = checkLine(array[i][j + 1] + array[i][j + 2]) + checkLine(array[i - 1][j] + array[i + 1][j]);
         return findCoefficientSquare(leftMiddle);
     }
 
@@ -365,12 +397,64 @@ function minimaxTurn2(gField) {
     return factorsArray.reduce(function (prev, cur) {
         return cur[2] > prev[2] ? cur : prev;
     }, [0, 0, -Infinity]);
-    console.log(betterTurn);
+    // console.log(betterTurn);
 
     // gameField[betterTurn[0]][betterTurn[1]]=settings.players.enemy;
 
 
     // gameField[betterTurn[0]][betterTurn[1]] = settings.players.enemy;
+}
+
+function findLineCoefficient(...squares) {
+    let {enemy, player} = settings.players;
+    let none = 0;
+    let own = 0;
+    let huy = 0;
+    for (let i = 0; i < 3; i++) {
+        let square = squares[i];
+        // square == enemy ? own++ : square == player ? enemy++ : none++;
+        if (square == enemy) {
+            own++;
+        }
+        if (square == player) {
+            huy++;
+        }
+        if (square == 0) {
+            none++;
+        }
+
+    }
+    return huy > 0 ? 0 : [1, 2, 9][own] + own > 0 ? 0 : [1, 2, 11][huy];
+}
+function findCoefficient(i, j, array) {
+    //[0,3,6]
+    //TODO reduce
+    let coefficient = 0;
+    for (let dots in points[i * 3 + j]) {
+        // for (let str in dots) {
+        let line = lines[dots];
+        coefficient += findLineCoefficient(array[line[0][0]][line[0][1]], array[line[1][0]][line[1][1]], array[line[2][0]][line[2][1]]);
+    }
+    return [i, j, coefficient];
+    // console.log(data);
+
+}
+function minimaxTurn3(gField) {
+    let currentTurn = 0;
+    let sosiska = [];
+    gField.map((array, cIndex) =>
+        array.map((square, rIndex) => {
+            if (square == 0) {
+                let coeff = findCoefficient(cIndex, rIndex, gField);
+                if (currentTurn <= coeff[2]) {
+                    currentTurn = coeff[2];
+                    sosiska = [coeff[0], coeff[1]];
+                }
+            }
+        })
+    );
+    return {currentTurn, sosiska};
+
 }
 export function makePlayerTurn(row, cell, value) {
     return (dispatch) => {
@@ -378,8 +462,10 @@ export function makePlayerTurn(row, cell, value) {
             var victory = findWinner(gameField, true); // проверка на победу.
             if (victory === null) {
                 gameField[row][cell] = value;
-                let AIturn = minimaxTurn2(gameField.map(array=>array.slice()));
-                gameField[AIturn[0]][AIturn[1]]=settings.players.enemy;
+                // let AIturn = minimaxTurn2(gameField.map(array=>array.slice()));
+                let AIturn = minimaxTurn3(gameField.map(array=>array.slice()));
+                debugger;
+                gameField[AIturn.sosiska[0]][AIturn.sosiska[1]] = settings.players.enemy;
                 // gameField = minimaxTurn(gameField, settings.players.enemy)[1];
                 dispatch({
                     type: UPDATE_GAME_DATA,
