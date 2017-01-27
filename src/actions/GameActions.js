@@ -430,10 +430,11 @@ function findCoefficient(i, j, array) {
     //[0,3,6]
     //TODO reduce
     let coefficient = 0;
-    for (let dots in points[i * 3 + j]) {
+    let squareIndex = i * 3 + j;
+    for (let dots in points[squareIndex]) {
         // for (let str in dots) {
-        let line = lines[dots];
-        coefficient += findLineCoefficient([array[line[0][1]][line[0][0]], array[line[1][1]][line[1][0]], array[line[2][1]][line[2][0]]]);
+        let line = lines[points[squareIndex][dots]];
+        coefficient += findLineCoefficient([array[line[0][0]][line[0][1]], array[line[1][0]][line[1][1]], array[line[2][0]][line[2][1]]]);
     }
     console.log(i,j,coefficient);
     return [i, j, coefficient];
@@ -443,10 +444,10 @@ function findCoefficient(i, j, array) {
 function minimaxTurn3(gField) {
     let currentTurn = 0;
     let sosiska = [];
-    gField.map((array, cIndex) =>
-        array.map((square, rIndex) => {
+    gField.map((array, rIndex) =>
+        array.map((square, cIndex) => {
             if (square == 0) {
-                let coeff = findCoefficient(cIndex, rIndex, gField);
+                let coeff = findCoefficient(rIndex, cIndex, gField);
                 if (currentTurn <= coeff[2]) {
                     currentTurn = coeff[2];
                     sosiska = [coeff[0], coeff[1]];
