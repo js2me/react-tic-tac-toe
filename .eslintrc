@@ -19,7 +19,7 @@
     "quotes": [2, "single"],
     "jsx-quotes": [1, "prefer-single"],
     "react/jsx-no-undef": 1,
-    "react/jsx-uses-react": 0,
-    "react/jsx-uses-vars": 0
+    "react/jsx-uses-react": 1,
+    "react/jsx-uses-vars": 1
   }
 }

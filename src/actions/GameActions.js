@@ -9,50 +9,64 @@ import {
 // import reqwest from 'reqwest';
 // import fetch from 'isomorphic-fetch';
 // import {getPlayers,updateWinner} from './GameInfoActions';
+
+//Адрес сервера с которого запрашивать данные о состоянии игрового поля
 const API_ROOT_URL = 'http://606ep.ru:8080/';
+//Игровое поле
 let gameField = [[0, 0, 0], [0, 0, 0], [0, 0, 0]],
+//Статус игры (победа - , проигрыш - , ничья - )
     gameStatus = 0,
+//Победная линия текущей игры (Необходима только для одного css класса)
     winLine = [],
+//Настройки и данные об игре
     settings = {
+        //Автозапуск новой игры при изменении статуса игры
         autoPlay: false,
+        //Значения игроков на поле ( 1 - это нолик, -1 - крестик )
         players: {
             player: 0,
-            enemy: 0,
-            tie: 0
+            enemy: 0
         }
     },
+//Кто сколько раз победил (Необходима для отображения количества побед)//TODO добавить ничью
     winners = {
         player: 0,
         enemy: 0
     },
+//Переменная обозначения окончания игры, блокирует ходы.
     gameOver = false;
-let recurseWinner = {
-    '1': board=>[1, board],
-    '0': board=>[-1, board],
-    '-1': board=>[0, board]
+//Настройки бота, задает уровень сложности , агрессивность
+let AIoptions = {
+    player: [1, 2, 9],
+    own: [1, 2, 10],
+    middleAngularLinesPref: 5
 };
 let playersValues = [-1, 1];
-let lines = [
+//Массив с координатами победных линий
+let lineCoordinates = [
     [[0, 0], [0, 1], [0, 2]],// 0
-    [[1, 0], [1, 1], [1, 2]],// 1
+    [[1, 0], [1, 1], [1, 2], AIoptions.middleAngularLinesPref],// 1
     [[2, 0], [2, 1], [2, 2]],// 2
     [[0, 0], [1, 0], [2, 0]],// 3
-    [[0, 1], [1, 1], [2, 1]],// 4
+    [[0, 1], [1, 1], [2, 1], AIoptions.middleAngularLinesPref],// 4
     [[0, 2], [1, 2], [2, 2]],// 5
     [[0, 0], [1, 1], [2, 2]],// 6
     [[0, 2], [1, 1], [2, 0]] // 7
 ];
-let points = [
-    [0, 3, 6],
-    [0, 4],
-    [0, 5, 7],
-    [1, 3],
-    [1, 4, 6, 7],
-    [1, 5],
-    [2, 3, 7],
-    [2, 4],
-    [2, 5, 6]
+//Массив с победными линиями для каждого квадрата с ссылками на массивы координат точек.
+//Каждый индекс элемента массива это квадрат на поле (Например : 2 квадрат - это 0*3+1(строка 0, столбец 1))
+let lines = [
+    [lineCoordinates[0], lineCoordinates[3], lineCoordinates[6]],
+    [lineCoordinates[0], lineCoordinates[4]],
+    [lineCoordinates[0], lineCoordinates[5], lineCoordinates[7]],
+    [lineCoordinates[1], lineCoordinates[3]],
+    [lineCoordinates[1], lineCoordinates[4], lineCoordinates[6], lineCoordinates[7]],
+    [lineCoordinates[1], lineCoordinates[5]],
+    [lineCoordinates[2], lineCoordinates[3], lineCoordinates[7]],
+    [lineCoordinates[2], lineCoordinates[4]],
+    [lineCoordinates[2], lineCoordinates[5], lineCoordinates[6]]
 ];
+//Отправка и получение данных с сервера о состоянии игрового поля
 function loadGameFieldData(dispatch) {
     fetch(API_ROOT_URL)
         .then(
@@ -78,12 +92,12 @@ function loadGameFieldData(dispatch) {
             console.log(err);
         });
 }
-function findWinner(board, collectWinLine = false) {
+//Поиск победителя в игре
+function findWinner(board) {
     // Check if someone won
     let allNotEmpty = true;
     for (var k = 0; k < playersValues.length; k++) {
         let value = playersValues[k];
-        let isEnemyValue = value == settings.players.enemy;
         // Check rows, columns, and diagonals on playing field
         let diagonalCompleted = true,
             reverseDiagonalCompleted = true;
@@ -103,14 +117,14 @@ function findWinner(board, collectWinLine = false) {
             let rowComplete = true,
                 colComplete = true;
             //TODO
-            if (board[i][0] != value || board[i][1] != value || board[i][2] != value) {
-                // colComplete = false;{
-                rowComplete = false;
-            }
+            // if (board[i][0] != value || board[i][1] != value || board[i][2] != value) {
+            //     // colComplete = false;{
+            //     rowComplete = false;
+            // }
             for (var j = 0; j < 3; j++) {
-                // if (board[i][j] != value) {
-                //     rowComplete = false;
-                // }
+                if (board[i][j] != value) {
+                    rowComplete = false;
+                }
                 if (board[j][i] != value) {
                     colComplete = false;
                 }
@@ -119,70 +133,43 @@ function findWinner(board, collectWinLine = false) {
                 }
             }
             if (rowComplete || colComplete) {
-                return isEnemyValue ? 1 : 0;
-
+                return value;
             }
         }
         if (diagonalCompleted || reverseDiagonalCompleted) {
-            return isEnemyValue ? 1 : 0;
+            return value;
         }
     }
     if (allNotEmpty) {
-        return -1;
+        return 'D';
     }
     return null;
 }
-function minimaxTurn(board, player) {
-    var winner = findWinner(board);
-    if (winner != null) {
-        return recurseWinner[winner](board);
-    } else {
-        let nextVal = null,
-            nextBoard = null;
-        for (var i = 0; i < 3; i++) {
-            for (var j = 0; j < 3; j++) {
-                if (board[i][j] == 0) {
-                    board[i][j] = player;
-                    var value = minimaxTurn(board, player == -1 ? 1 : player == 1 ? -1 : 0)[0];
-                    var playerIsEnemy = player == settings.players.enemy;
-                    if ((playerIsEnemy && (nextVal == null || value > nextVal)) || (!playerIsEnemy && (nextVal == null || value < nextVal))) {
-                        nextBoard = board.map(arr => arr.slice());
-                        nextVal = value;
-                    }
-                    board[i][j] = 0;
+//Проверка на победу, а также подведение результатов игры
+function checkWinner(dispatch) {
+    let winner = findWinner(gameField);
+    if (winner !== null) {
+        gameStatus = winner;
+        if (gameStatus !== 'D') {
+            let whoWinner = '';
+            Object.keys(settings.players).map(index=> {
+                if (settings.players[index] === winner) {
+                    whoWinner = index;
                 }
+            });
+            if (!gameOver) {
+                winners[whoWinner]++;
+                gameOver = true;
             }
         }
-        return [nextVal, nextBoard];
-    }
-}
-
-function winnerFinded(dispatch, winner) {
-    gameStatus = winner;
-    if (gameStatus !== 'D') {
-        let whoWinner = '';
-        Object.keys(settings.players).map((index)=> {
-            if (settings.players[index] === winner) {
-                whoWinner = index;
-            }
+        else {
+            winLine = [];
+        }
+        dispatch({
+            type: UPDATE_GAME_STATUS,
+            gameStatus, winLine, winners
         });
-        // Object.keys(settings.players).map(index=>
-        //     settings.players[index] === winner ?
-        //         whoWinner = index :
-        //         whoWinner = '');
-        if (!gameOver) {
-            winners[whoWinner]++;
-            gameOver = true;
-        }
     }
-    else {
-        winLine = [];
-    }
-    dispatch({
-        type: UPDATE_GAME_STATUS,
-        gameStatus, winLine, winners
-    });
-
 }
 export function getGameFieldData() {
     return (dispatch) => {
@@ -218,264 +205,71 @@ export function resetGameStatus() {
         });
     }
 }
-function findCoefficientSquare(value) {
-    // debugger;
-    if (typeof value == 'number')
-        return value;
-    else {
-        var players = value.match(/p/g);
-        var enemy = value.match(/e/g);
-        return (players === null ? 0 : players.length) + (enemy === null ? 0 : enemy.length);
-    }
-    // let coef = 0;
-    // if (value == 0) {
-    //     coef = 1;
-    // }
-    // if (value < 0) {
-    //     if (value <= -3) {
-    //         coef = 9;
-    //     }
-    //     coef = 5;
-    // } else {
-    //     if (value <= 3) {
-    //         coef = 9;
-    //     }
-    //     coef = 5;
-    // }
-    // return coef;
-}
-function angleCoefficient(i, j, array) {
-    //                                  0 _ 0
-    //                                  _ _ _
-    //                                  0 _ 0
-    //  [i][j]   [i][j+1]   [i][j+2]
-    // [i+1][j] [i+1][j+1] [i+1][j+2]
-    // [i+2][j] [i+2][j+1] [i+2][j+2]
-    if (i == 0 && j == 0) {
-        let value = 0;
-        // if (array[i][j + 1] == 0 && array[i][j + 2] == 0) {
-        //     value++;
-        // }
-        // if (array[i][j + 1] == settings.players.enemy && array[i][j + 2] == 0 || array[i][j + 1] == 0 && array[i][j + 2] == settings.players.enemy) {
-        //     value++;
-        // }
-        // if ((array[i][j + 1] == settings.players.enemy && array[i][j + 2] == settings.players.enemy) || array[i][j + 1] == settings.players.player && array[i][j + 2] == settings.players.player) {
-        //     value+=10;
-        // }
-        let leftTop = checkLine(array[i][j + 1] + array[i][j + 2]) + checkLine(array[i + 1][j + 1] + array[i + 2][j + 2]) + checkLine(array[i + 1][j] + array[i + 2][j]);
-        return findCoefficientSquare(leftTop);
-    }
-    //  [i][j-2]   [i][j-1]   [i][j]
-    // [i+1][j-2] [i+1][j-1] [i+1][j]
-    // [i+2][j-2] [i+2][j-1] [i+2][j]
-    if (i == 0 && j == 2) {
-        let rightTop = checkLine(array[i][j - 1] + array[i][j - 2]) + checkLine(array[i + 1][j] + array[i + 2][j]) + checkLine(array[i + 1][j - 1] + array[i + 2][j - 2]);
-        return findCoefficientSquare(rightTop);
-    }
-    // [i-2][j-2] [i-2][j-1] [i-2][j]
-    // [i-1][j-2] [i-1][j-1] [i-1][j]
-    //  [i][j-2]   [i][j-1]   [i][j]
-    if (i == 2 && j == 2) {
-        let rightBot = checkLine(array[i][j - 1] + array[i][j - 2]) + checkLine(array[i - 1][j - 1] + array[i - 2][j - 2]) + checkLine(array[i - 1][j] + array[i - 2][j]);
-        return findCoefficientSquare(rightBot);
-    }
-    // [i-2][j] [i-2][j+1] [i-2][j+2]
-    // [i-1][j] [i-1][j+1] [i-1][j+2]
-    //  [i][j]   [i][j+1]   [i][j+2]
-    if (i == 2 && j == 0) {
-        let leftBot = array[i][j - 1] + array[i][j - 2] + array[i][j + 1] + array[i][j + 2] + array[i - 1][j + 1] + array[i - 2][j + 2];
-        return findCoefficientSquare(leftBot);
-    }
-    // return 0;
-}
-function centerCoefficient(i, j, array) {
-    let reverseDiagonal = checkLine(array[i - 1][j + 1] + array[i + 1][j - 1]);
-    let diagonal = checkLine(array[i - 1][j + 1] + array[i + 1][j - 1]);
-    let column = checkLine(array[i - 1][j] + array[i + 1][j]);
-    let row = checkLine(array[i][j - 1] + array[i][j + 1]);
-    return findCoefficientSquare(reverseDiagonal + diagonal + column + row, true);
-}
-function checkLine(value) {
-    if (typeof value == 'string') {
-        if (value.indexOf('0') == -1) {
-            if (value.indexOf('p') != -1) {
-                return 'ppppp';
-            } else {
-                return 'eeeeeeeeeee';
-            }
-        }
-    }
-};
-function centerAngularCoefficient(i, j, array) {
-
-    //                                  _ 0 _
-    //                                  0 _ 0
-    //                                  _ 0 _
-    //  [i][j-1]   [i][j]   [i][j+1]
-    // [i+1][j-1] [i+1][j] [i+1][j+1]
-    // [i+2][j-1] [i+2][j] [i+2][j+1]
-    if (i == 0 && j == 1) {
-        let middleTop = checkLine(array[i + 1][j] + array[i + 2][j]) + checkLine(array[i][j - 1] + array[i][j + 1]);
-        return findCoefficientSquare(middleTop);
-    }
-    //  [i-1][j-2] [i-1][j-1] [i-1][j]
-    //   [i][j-2]   [i][j-1]   [i][j]
-    //  [i+1][j-2] [i+1][j-1] [i+1][j]
-    if (i == 1 && j == 2) {
-        let rightMiddle = checkLine(array[i][j - 2] + array[i][j - 1]) + checkLine(array[i - 1][j] + array[i + 1][j]);
-        return findCoefficientSquare(rightMiddle);
-    }
-    // [i-2][j-1] [i-2][j] [i-2][j+1]
-    // [i-1][j-1] [i-1][j] [i-1][j+1]
-    //  [i][j-1]   [i][j]   [i][j+1]
-    if (i == 2 && j == 1) {
-        let botMiddle = checkLine(array[i - 1][j] + array[i - 2][j]) + checkLine(array[i][j - 1] + array[i][j + 1]);
-        return findCoefficientSquare(botMiddle);
-    }
-    //  [i-1][j] [i-1][j+1] [i-1][j+2]
-    //   [i][j]   [i][j+1]   [i][j+2]
-    //  [i+1][j] [i+1][j+1] [i+1][j+2]
-    if (i == 1 && j == 0) {
-        let leftMiddle = checkLine(array[i][j + 1] + array[i][j + 2]) + checkLine(array[i - 1][j] + array[i + 1][j]);
-        return findCoefficientSquare(leftMiddle);
-    }
-
-
-}
-function findFactorSquare(i, j, array) {
-    let factor = 0;
-    // O _ O
-    // _ _ _
-    // O _ O
-    if ((i == 0 && j == 0) || (i == 2 && j == 0) || (i == 0 && j == 2) || (i == 2 && j == 2)) {
-        factor = angleCoefficient(i, j, array);
-    }
-    // _ _ _
-    // _ O _
-    // _ _ _
-    if (i == 1 && j == 1) {
-        factor = centerCoefficient(i, j, array);
-    }
-    // _ O _
-    // O _ O
-    // _ O _
-    if ((i == 1 && j == 0) || (i == 0 && j == 1) || (i == 1 && j == 2) || (i == 2 && j == 1)) {
-        factor = centerAngularCoefficient(i, j, array);
-    }
-    return [i, j, factor];
-}
-function minimaxTurn2(gField) {
-    // 0 0 1
-    // 1 0 1 - 1 можно чтобы
-    // 0 5 0 - 5 нужно сюда ходить
-    let factorsArray = [];
-    let gameField = gField;
-    gField.map((array, cIndex) =>
-        array.map((square, rIndex) => {
-            gameField[cIndex][rIndex] = gameField[cIndex][rIndex] == settings.players.enemy ? 'e' : gameField[cIndex][rIndex] == settings.players.player ? 'p' : 0;
-        })
-    );
-
-    gField.map((array, cIndex) =>
-        array.map((square, rIndex) => {
-            factorsArray.push(square ? [0, 0, 0] : findFactorSquare(cIndex, rIndex, gameField));
-        })
-    );
-    // for (let i = 0; i < gField.length; i++) {
-    //     for (let j = 0; j < gField[i].length; j++) {
-    //         if (gField[i][j] == 0) {
-    //             factorsArray.push(findFactorSquare(i, j, gField));
-    //         }
-    //     }
-    // };
-    let betterTurn = [];
-    // factorsArray.reduce((prev, curr, index, arr)=> {
-    //     if(prev[2] < curr[2]){
-    //         betterTurn = curr;
-    //     }
-    // });
-    return factorsArray.reduce(function (prev, cur) {
-        return cur[2] > prev[2] ? cur : prev;
-    }, [0, 0, -Infinity]);
-    // console.log(betterTurn);
-
-    // gameField[betterTurn[0]][betterTurn[1]]=settings.players.enemy;
-
-
-    // gameField[betterTurn[0]][betterTurn[1]] = settings.players.enemy;
-}
-
-function findLineCoefficient(squares) {
+//Нахождение коэффициента линии
+function findLineCoefficient(squares, commonLineCoefficient = 0) {
     let {enemy, player} = settings.players;
-    let none = 0;
-    let own = 0;
-    let huy = 0;
-    for (let i = 0; i < 3; i++) {
-        let square = squares[i];
-        // square == enemy ? own++ : square == player ? enemy++ : none++;
+    let ownCoef = 0, playerCoef = 0;
+    for (let square of squares) {
         if (square == enemy) {
-            own++;
+            ownCoef++;
         }
         if (square == player) {
-            huy++;
+            playerCoef++;
         }
-        if (square == 0) {
-            none++;
-        }
-
     }
-    return (huy < 0 ? 0 : [1, 2, 10][own]) + (own < 0 ? 0 : [1, 2, 9][huy]);
+    return (playerCoef < 0 ? 0 : AIoptions.own[ownCoef]) +
+        (ownCoef < 0 ? 0 : AIoptions.player[playerCoef]) +
+        (playerCoef == 0 ? commonLineCoefficient : 0);
 }
+//Поиск коэффициента клетки по i и j
 function findCoefficient(i, j, array) {
-    //[0,3,6]
-    //TODO reduce
     let coefficient = 0;
-    let squareIndex = i * 3 + j;
-    for (let dots in points[squareIndex]) {
-        // for (let str in dots) {
-        let line = lines[points[squareIndex][dots]];
-        coefficient += findLineCoefficient([array[line[0][0]][line[0][1]], array[line[1][0]][line[1][1]], array[line[2][0]][line[2][1]]]);
+    for (let winLine of lines[i * 3 + j]) {
+        coefficient += findLineCoefficient([
+            array[winLine[0][0]][winLine[0][1]],
+            array[winLine[1][0]][winLine[1][1]],
+            array[winLine[2][0]][winLine[2][1]]
+        ], winLine[3]);
     }
-    console.log(i,j,coefficient);
-    return [i, j, coefficient];
-    // console.log(data);
+    return {position: [i, j], value: coefficient};
 
 }
-function minimaxTurn3(gField) {
-    let currentTurn = 0;
-    let sosiska = [];
+function AITurn(gField = gameField) {
+    let bestCoefficient = {
+        position: [],
+        value: 0
+    };
     gField.map((array, rIndex) =>
         array.map((square, cIndex) => {
-            if (square == 0) {
-                let coeff = findCoefficient(rIndex, cIndex, gField);
-                if (currentTurn <= coeff[2]) {
-                    currentTurn = coeff[2];
-                    sosiska = [coeff[0], coeff[1]];
-                }
+            if (!square) {
+                let coefficient = findCoefficient(rIndex, cIndex, gField);
+                bestCoefficient = bestCoefficient.value <= coefficient.value ? coefficient : bestCoefficient;
             }
         })
     );
-    return {currentTurn, sosiska};
+    gameField[bestCoefficient.position[0]][bestCoefficient.position[1]] = settings.players.enemy;
 
 }
+//Ход игрока, но и в то же время ход бота.
 export function makePlayerTurn(row, cell, value) {
     return (dispatch) => {
         if (!gameOver) {
-            var victory = findWinner(gameField, true); // проверка на победу.
-            if (victory === null) {
-                gameField[row][cell] = value;
-                // let AIturn = minimaxTurn2(gameField.map(array=>array.slice()));
-                let AIturn = minimaxTurn3(gameField.map(array=>array.slice()));
-                debugger;
-                gameField[AIturn.sosiska[0]][AIturn.sosiska[1]] = settings.players.enemy;
-                // gameField = minimaxTurn(gameField, settings.players.enemy)[1];
-                dispatch({
-                    type: UPDATE_GAME_DATA,
-                    payload: gameField
-                });
-            } else {
-                winnerFinded(dispatch, victory);
-            }
+            gameField[row][cell] = value;
+            AITurn();
+            checkWinner(dispatch);
+            // var victory = findWinner(gameField, true); // проверка на победу.
+            // if (victory === null) {
+            // let AIturn = minimaxTurn2(gameField.map(array=>array.slice()));
+            // let AIturn =
+
+            // gameField = minimaxTurn(gameField, settings.players.enemy)[1];
+            dispatch({
+                type: UPDATE_GAME_DATA,
+                payload: gameField
+            });
+            // } else {
+            //     winnerFinded(dispatch, victory);
+            // }
         }
 
     }
