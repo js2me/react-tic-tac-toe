@@ -14,10 +14,12 @@ export default class Game extends Component {
         }
     }
 
-    checkWinSquare(row, cell) {
-        if(this.props.winLine !== undefined){
-        return this.props.winLine.includes(('r' + row) + ('c' + cell)) ? ' winner' : '';
-        } return '';
+    checkWinSquare(row, column) {
+        debugger;
+        if (this.props.winLine !== undefined) {
+            return this.props.winLine.includes(column * 3 + row) ? ' winner' : '';
+        }
+        return '';
     }
 
     checkValueSquare(value) {
@@ -49,13 +51,22 @@ export default class Game extends Component {
             {this.collectPlayingField(gameField)}
         </div>
     }
+
+    static propTypes = {
+        gameActions: PropTypes.object.isRequired,
+        gameField: PropTypes.array.isRequired,
+        winLine: PropTypes.array,
+        fetching: PropTypes.bool,
+        error: PropTypes.string.isRequired,
+        player: PropTypes.number.isRequired
+    }
 }
 
-Game.propTypes = {
-    gameActions: PropTypes.object.isRequired,
-    gameField: PropTypes.array.isRequired,
-    winLine: PropTypes.array,
-    fetching: PropTypes.bool,
-    error: PropTypes.string.isRequired,
-    player: PropTypes.number.isRequired
-}
+// Game.propTypes = {
+//     gameActions: PropTypes.object.isRequired,
+//     gameField: PropTypes.array.isRequired,
+//     winLine: PropTypes.array,
+//     fetching: PropTypes.bool,
+//     error: PropTypes.string.isRequired,
+//     player: PropTypes.number.isRequired
+// }

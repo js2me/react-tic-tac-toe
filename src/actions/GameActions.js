@@ -6,9 +6,6 @@ import {
     RESET_GAME_STATUS,
     UPDATE_GAME_DATA
 } from '../constants/Game';
-// import reqwest from 'reqwest';
-// import fetch from 'isomorphic-fetch';
-// import {getPlayers,updateWinner} from './GameInfoActions';
 
 //Адрес сервера с которого запрашивать данные о состоянии игрового поля
 const API_ROOT_URL = 'http://606ep.ru:8080/';
@@ -41,7 +38,6 @@ let AIoptions = {
     own: [1, 2, 10],
     middleAngularLinesPref: 5
 };
-let playersValues = [-1, 1];
 //Массив с координатами победных линий
 let lineCoordinates = [
     [[0, 0], [0, 1], [0, 2]],// 0
@@ -85,59 +81,58 @@ function loadGameFieldData(dispatch) {
                         type: GET_GAME_DATA,
                         payload: data
                     });
-                });
+                })
             }
         )
-        .catch(function (err) {
-            console.log(err);
-        });
+        .catch(function () {
+            gameField = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+            dispatch({
+                type: GET_GAME_DATA,
+                payload: gameField
+            });
+        })
 }
 //Поиск победителя в игре
 function findWinner(board) {
-    // Check if someone won
     let allNotEmpty = true;
-    for (var k = 0; k < playersValues.length; k++) {
-        let value = playersValues[k];
-        // Check rows, columns, and diagonals on playing field
+    let playerValues = [settings.players.player,settings.players.enemy];
+    for (var k = 0; k < playerValues.length; k++) {
+        let value = playerValues[k];
+        let playerWinLines = [[],[], [],[]];
         let diagonalCompleted = true,
             reverseDiagonalCompleted = true;
         for (var i = 0; i < 3; i++) {
             if (board[i][i] != value) {
                 diagonalCompleted = false;
-            }
-            // else {
-            //     winLine.push('r' + i + 'c' + i);
-            // }
+            }else playerWinLines[0].push(i*3+i);
             if (board[2 - i][i] != value) {
                 reverseDiagonalCompleted = false;
-            }
-            // else {
-            //     winLine.push('r' + (2 - i) + 'c' + i);
-            // }
+            }else playerWinLines[1].push(i*3+(2-i));
             let rowComplete = true,
                 colComplete = true;
-            //TODO
-            // if (board[i][0] != value || board[i][1] != value || board[i][2] != value) {
-            //     // colComplete = false;{
-            //     rowComplete = false;
-            // }
             for (var j = 0; j < 3; j++) {
                 if (board[i][j] != value) {
                     rowComplete = false;
-                }
+                }else playerWinLines[2].push(i*3+j);
                 if (board[j][i] != value) {
                     colComplete = false;
-                }
+                }else playerWinLines[3].push(i*3+j);
                 if (board[i][j] == 0) {
                     allNotEmpty = false;
                 }
             }
             if (rowComplete || colComplete) {
+                winLine = rowComplete ? playerWinLines[2] : playerWinLines[3];
                 return value;
+            }else{
+                playerWinLines[2] = playerWinLines[3] = [];
             }
         }
         if (diagonalCompleted || reverseDiagonalCompleted) {
+            winLine = diagonalCompleted ? playerWinLines[0] : playerWinLines[1];
             return value;
+        }else{
+            playerWinLines[0] = playerWinLines[1] = [];
         }
     }
     if (allNotEmpty) {
@@ -171,6 +166,7 @@ function checkWinner(dispatch) {
         });
     }
 }
+//Функция запроса игровых данных с сервера, также с некоторой вероятностью могут быть пустыми [[0,0,0],[0,0,0],[0,0,0]]
 export function getGameFieldData() {
     return (dispatch) => {
         dispatch({
@@ -196,6 +192,7 @@ export function getGameFieldData() {
     }
 
 }
+//Функция сброса игрового статуса при старте новой игры
 export function resetGameStatus() {
     gameStatus = 0;
     return (dispatch) => {
@@ -234,6 +231,7 @@ function findCoefficient(i, j, array) {
     return {position: [i, j], value: coefficient};
 
 }
+//Ход бота
 function AITurn(gField = gameField) {
     let bestCoefficient = {
         position: [],
@@ -274,6 +272,7 @@ export function makePlayerTurn(row, cell, value) {
 
     }
 }
+//Функция обновления состояния данных игрока
 export function updatePlayersData(playerChoice) {
     return (dispatch) => {
         settings.players.player = playerChoice;
@@ -284,6 +283,7 @@ export function updatePlayersData(playerChoice) {
         })
     }
 }
+//Функция обновления состояния игровых настроек
 export function updatePlayerSettings(option, value) {
     return (dispatch) => {
         settings[option] = value || typeof settings[option] === 'boolean' ? !settings[option] : settings[option];
